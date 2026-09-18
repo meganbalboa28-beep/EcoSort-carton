@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EcoSort AI - Cartón</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -14,49 +17,53 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f4eadc;
+      background: #f3e7d3;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
+      padding: 15px;
     }
 
     .app {
       width: 100%;
-      max-width: 420px;
+      max-width: 430px;
       background: white;
       border-radius: 25px;
-      padding: 25px;
+      padding: 22px;
       text-align: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
 
-    .icon {
-      font-size: 65px;
-      margin-bottom: 5px;
+    .logo {
+      font-size: 55px;
     }
 
     h1 {
       margin: 5px 0;
-      color: #8b5a2b;
+      color: #7b4f25;
       font-size: 28px;
     }
 
-    .subtitle {
+    .subtitulo {
       color: #666;
-      margin-bottom: 25px;
+      margin-bottom: 18px;
     }
 
-    .camera {
-      border: 3px dashed #c49a6c;
+    #camera {
+      width: 100%;
       border-radius: 18px;
-      padding: 25px 15px;
-      margin-bottom: 20px;
-      background: #fffaf4;
+      overflow: hidden;
+      background: #222;
+      min-height: 280px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    .camera-icon {
-      font-size: 45px;
+    #camera canvas {
+      width: 100% !important;
+      height: auto !important;
+      display: block;
     }
 
     button {
@@ -64,76 +71,213 @@
       border: none;
       border-radius: 15px;
       padding: 15px;
-      margin-top: 10px;
+      margin-top: 15px;
+      background: #8b5e34;
+      color: white;
       font-size: 17px;
       font-weight: bold;
       cursor: pointer;
-      background: #9b6b3d;
-      color: white;
     }
 
-    button:hover {
-      opacity: 0.9;
+    button:disabled {
+      background: #aaa;
     }
 
-    .result {
-      display: none;
-      margin-top: 20px;
-      padding: 18px;
-      border-radius: 16px;
-      background: #f1e2cf;
-      color: #5d3a1a;
-      font-size: 18px;
-      font-weight: bold;
-    }
-
-    .examples {
-      margin-top: 20px;
+    #estado {
+      margin-top: 15px;
+      font-size: 16px;
       color: #555;
+    }
+
+    #resultado {
+      margin-top: 15px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #f4eadc;
+      color: #5c3b1e;
+      font-size: 19px;
+      font-weight: bold;
+      display: none;
+    }
+
+    #confianza {
+      margin-top: 8px;
       font-size: 14px;
+      color: #666;
+      font-weight: normal;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="app">
+<div class="app">
 
-    <div class="icon">📦</div>
+  <div class="logo">📦</div>
 
-    <h1>EcoSort AI</h1>
+  <h1>EcoSort AI</h1>
 
-    <div class="subtitle">
-      Detector de residuos de cartón
-    </div>
-
-    <div class="camera">
-      <div class="camera-icon">📷</div>
-      <p>Coloca el residuo frente a la cámara</p>
-      <button onclick="reconocer()">Reconocer residuo</button>
-    </div>
-
-    <div id="resultado" class="result"></div>
-
-    <div class="examples">
-      Ejemplos: 📦 caja de cartón · 📄 papel · 🥡 cartón de alimentos
-    </div>
-
+  <div class="subtitulo">
+    Reconocimiento de residuos — CARTÓN
   </div>
 
-  <script>
-    function reconocer() {
+  <div id="camera">
+    <span style="color:white;">La cámara aparecerá aquí</span>
+  </div>
 
-      const resultado = document.getElementById("resultado");
+  <button id="iniciar" onclick="iniciarCamara()">
+    📷 Iniciar cámara
+  </button>
+
+  <div id="estado">
+    Presiona el botón para comenzar.
+  </div>
+
+  <div id="resultado"></div>
+
+  <div id="confianza"></div>
+
+</div>
+
+<script>
+
+  // MODELO DE TEACHABLE MACHINE
+  const URL = "https://teachablemachine.withgoogle.com/models/y9AIk9YfX/";
+
+  let model;
+  let webcam;
+  let maxPredictions;
+
+  async function iniciarCamara() {
+
+    const boton = document.getElementById("iniciar");
+    const estado = document.getElementById("estado");
+
+    boton.disabled = true;
+    estado.innerText = "⏳ Cargando inteligencia artificial...";
+
+    try {
+
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+
+      maxPredictions = model.getTotalClasses();
+
+      webcam = new tmImage.Webcam(400, 400, true);
+
+      await webcam.setup({
+        facingMode: "environment"
+      });
+
+      await webcam.play();
+
+      document.getElementById("camera").innerHTML = "";
+      document.getElementById("camera").appendChild(webcam.canvas);
+
+      estado.innerText = "🟢 Cámara activa. Muestra un residuo.";
+
+      window.requestAnimationFrame(loop);
+
+    } catch (error) {
+
+      console.error(error);
+
+      estado.innerText =
+        "❌ No se pudo activar la cámara. Revisa los permisos del navegador.";
+
+      boton.disabled = false;
+    }
+  }
+
+
+  async function loop() {
+
+    webcam.update();
+
+    await predecir();
+
+    window.requestAnimationFrame(loop);
+  }
+
+
+  async function predecir() {
+
+    const predicciones = await model.predict(webcam.canvas);
+
+    let mayor = predicciones[0];
+
+    for (let i = 1; i < predicciones.length; i++) {
+
+      if (predicciones[i].probability > mayor.probability) {
+        mayor = predicciones[i];
+      }
+
+    }
+
+    const clase = mayor.className.toLowerCase();
+    const porcentaje = (mayor.probability * 100).toFixed(1);
+
+    const resultado = document.getElementById("resultado");
+    const confianza = document.getElementById("confianza");
+
+    confianza.innerText =
+      "Confianza de reconocimiento: " + porcentaje + "%";
+
+
+    // CARTÓN
+    if (
+      clase.includes("carton") ||
+      clase.includes("cartón") ||
+      clase.includes("papel")
+    ) {
 
       resultado.style.display = "block";
 
       resultado.innerHTML =
-        "✅ ¡Residuo identificado!<br><br>" +
-        "📦 Este residuo pertenece al<br>" +
+        "✅ ¡ES CARTÓN!<br><br>" +
+        "📦 Deposítalo en el<br>" +
         "🟤 TACHO DE CARTÓN.";
     }
-  </script>
+
+
+    // PLÁSTICO
+    else if (clase.includes("plastico") || clase.includes("plástico")) {
+
+      resultado.style.display = "block";
+
+      resultado.innerHTML =
+        "❌ NO VA AQUÍ<br><br>" +
+        "🧴 Este residuo es PLÁSTICO.<br>" +
+        "➡️ Llévalo al TACHO DE PLÁSTICO.";
+    }
+
+
+    // ORGÁNICO
+    else if (clase.includes("organico") || clase.includes("orgánico")) {
+
+      resultado.style.display = "block";
+
+      resultado.innerHTML =
+        "❌ NO VA AQUÍ<br><br>" +
+        "🍎 Este residuo es ORGÁNICO.<br>" +
+        "➡️ Llévalo al TACHO DE ORGÁNICO.";
+    }
+
+
+    // OTRO RESULTADO
+    else {
+
+      resultado.style.display = "block";
+
+      resultado.innerHTML =
+        "🔎 Residuo detectado:<br><br>" +
+        mayor.className;
+    }
+  }
+
+</script>
 
 </body>
 </html>
