@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>EcoSort AI - Cartón</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
@@ -33,6 +34,7 @@
       padding: 25px;
       text-align: center;
       box-shadow: 0 8px 25px rgba(0,0,0,.15);
+
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -83,6 +85,7 @@
 
     button:disabled {
       background: #aaa;
+      cursor: not-allowed;
     }
 
     #camera {
@@ -118,14 +121,14 @@
     }
 
     .contador {
-      font-size: 55px;
+      font-size: 60px;
       font-weight: bold;
       color: #8b5e34;
       margin: 20px;
     }
 
     .gracias {
-      font-size: 25px;
+      font-size: 22px;
       color: #7b4f28;
       font-weight: bold;
     }
@@ -156,8 +159,8 @@
     <h2>Tacho de Cartón</h2>
 
     <p>
-      Identifica tus residuos y descubre
-      dónde debes desecharlos correctamente.
+      Identifica tu residuo y descubre
+      dónde debes desecharlo correctamente.
     </p>
 
     <button onclick="comenzar()">
@@ -167,7 +170,7 @@
   </section>
 
 
-  <!-- ================= CÁMARA ================= -->
+  <!-- ================= RECONOCIMIENTO ================= -->
 
   <section id="reconocimiento" class="pantalla">
 
@@ -178,7 +181,7 @@
     </p>
 
     <div id="camera">
-      <p style="color:white;padding:40px;">
+      <p style="color:white; padding:40px;">
         Cargando cámara...
       </p>
     </div>
@@ -263,6 +266,7 @@
 <script>
 
   // MODELO DE TEACHABLE MACHINE
+
   const URL =
     "https://teachablemachine.withgoogle.com/models/y9AIk9YfX/";
 
@@ -270,7 +274,7 @@
   let webcam;
   let maxPredictions;
 
-  let cartónDetectado = false;
+  let cartonDetectado = false;
   let analizando = false;
 
 
@@ -292,17 +296,30 @@
 
     mostrarPantalla("reconocimiento");
 
+    const resultado =
+      document.getElementById("resultado");
+
+    resultado.className = "resultado";
+
+    resultado.innerHTML =
+      "⏳ Cargando reconocimiento...";
+
     try {
 
-      const modelURL = URL + "model.json";
-      const metadataURL = URL + "metadata.json";
+      const modelURL =
+        URL + "model.json";
+
+      const metadataURL =
+        URL + "metadata.json";
 
       model = await tmImage.load(
         modelURL,
         metadataURL
       );
 
-      maxPredictions = model.getTotalClasses();
+      maxPredictions =
+        model.getTotalClasses();
+
 
       webcam = new tmImage.Webcam(
         400,
@@ -310,11 +327,16 @@
         true
       );
 
+
+      // 📱 CÁMARA FRONTAL
+
       await webcam.setup({
-        facingMode: "environment"
+        facingMode: "user"
       });
 
+
       await webcam.play();
+
 
       document.getElementById("camera").innerHTML = "";
 
@@ -322,17 +344,26 @@
         .getElementById("camera")
         .appendChild(webcam.canvas);
 
+
       analizando = true;
 
       window.requestAnimationFrame(loop);
 
-    } catch (error) {
+    }
 
-      document.getElementById("resultado").innerHTML =
+    catch (error) {
+
+      console.error(error);
+
+      resultado.className =
+        "resultado incorrecto";
+
+      resultado.innerHTML =
         "❌ No se pudo activar la cámara.<br><br>" +
         "Permite el acceso a la cámara.";
 
     }
+
   }
 
 
@@ -347,6 +378,7 @@
     await predecir();
 
     window.requestAnimationFrame(loop);
+
   }
 
 
@@ -354,10 +386,14 @@
 
     if (!model) return;
 
+
     const predicciones =
       await model.predict(webcam.canvas);
 
-    let mayor = predicciones[0];
+
+    let mayor =
+      predicciones[0];
+
 
     for (
       let i = 1;
@@ -370,14 +406,17 @@
         mayor.probability
       ) {
 
-        mayor = predicciones[i];
+        mayor =
+          predicciones[i];
 
       }
 
     }
 
+
     const clase =
       mayor.className.toLowerCase();
+
 
     const porcentaje =
       (mayor.probability * 100).toFixed(0);
@@ -391,14 +430,14 @@
       document.getElementById("resultado");
 
 
-    // ========== CARTÓN ==========
+    // ================= CARTÓN =================
 
     if (
       clase.includes("carton") ||
       clase.includes("cartón")
     ) {
 
-      cartónDetectado = true;
+      cartonDetectado = true;
 
       resultado.className =
         "resultado correcto";
@@ -408,21 +447,21 @@
         "📦 Este residuo va en el " +
         "<b>TACHO DE CARTÓN</b>.";
 
-      document
-        .getElementById("botonDesechar")
+
+      document.getElementById("botonDesechar")
         .disabled = false;
 
     }
 
 
-    // ========== PLÁSTICO ==========
+    // ================= PLÁSTICO =================
 
     else if (
       clase.includes("plastico") ||
       clase.includes("plástico")
     ) {
 
-      cartónDetectado = false;
+      cartonDetectado = false;
 
       resultado.className =
         "resultado incorrecto";
@@ -432,21 +471,21 @@
         "🧴 Es PLÁSTICO.<br>" +
         "Llévalo al TACHO DE PLÁSTICO.";
 
-      document
-        .getElementById("botonDesechar")
+
+      document.getElementById("botonDesechar")
         .disabled = true;
 
     }
 
 
-    // ========== ORGÁNICO ==========
+    // ================= ORGÁNICO =================
 
     else if (
       clase.includes("organico") ||
       clase.includes("orgánico")
     ) {
 
-      cartónDetectado = false;
+      cartonDetectado = false;
 
       resultado.className =
         "resultado incorrecto";
@@ -456,13 +495,18 @@
         "🍎 Es ORGÁNICO.<br>" +
         "Llévalo al TACHO DE ORGÁNICO.";
 
-      document
-        .getElementById("botonDesechar")
+
+      document.getElementById("botonDesechar")
         .disabled = true;
 
     }
 
+
+    // ================= OTRO =================
+
     else {
+
+      cartonDetectado = false;
 
       resultado.className =
         "resultado";
@@ -470,10 +514,12 @@
       resultado.innerHTML =
         "🔎 Analizando residuo...";
 
-      document
-        .getElementById("botonDesechar")
+
+      document.getElementById("botonDesechar")
         .disabled = true;
+
     }
+
   }
 
 
@@ -481,37 +527,47 @@
 
   function desechar() {
 
-    if (!cartónDetectado) return;
+    if (!cartonDetectado) return;
+
 
     analizando = false;
+
 
     if (webcam) {
       webcam.stop();
     }
 
+
     mostrarPantalla("espera");
+
 
     let tiempo = 8;
 
-    document.getElementById("contador").innerText =
-      tiempo;
 
-    const intervalo = setInterval(() => {
+    document.getElementById("contador")
+      .innerText = tiempo;
 
-      tiempo--;
 
-      document.getElementById("contador").innerText =
-        tiempo;
+    const intervalo =
+      setInterval(() => {
 
-      if (tiempo <= 0) {
+        tiempo--;
 
-        clearInterval(intervalo);
 
-        mostrarPantalla("listo");
+        document.getElementById("contador")
+          .innerText = tiempo;
 
-      }
 
-    }, 1000);
+        if (tiempo <= 0) {
+
+          clearInterval(intervalo);
+
+          mostrarPantalla("listo");
+
+        }
+
+      }, 1000);
+
   }
 
 
