@@ -17,7 +17,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background: #f3e7d3;
+      background: #f5eadb;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -26,38 +26,71 @@
 
     .app {
       width: 100%;
-      max-width: 430px;
+      max-width: 420px;
+      min-height: 650px;
       background: white;
-      border-radius: 25px;
-      padding: 22px;
+      border-radius: 28px;
+      padding: 25px;
       text-align: center;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 25px rgba(0,0,0,.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .pantalla {
+      display: none;
+    }
+
+    .pantalla.activa {
+      display: block;
     }
 
     .logo {
-      font-size: 55px;
+      font-size: 75px;
+      margin-bottom: 10px;
     }
 
     h1 {
-      margin: 5px 0;
-      color: #7b4f25;
-      font-size: 28px;
+      color: #7b4f28;
+      font-size: 32px;
+      margin: 8px 0;
     }
 
-    .subtitulo {
+    h2 {
+      color: #7b4f28;
+      font-size: 25px;
+    }
+
+    p {
       color: #666;
-      margin-bottom: 18px;
+      font-size: 17px;
+      line-height: 1.4;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #8b5e34;
+      color: white;
+    }
+
+    button:disabled {
+      background: #aaa;
     }
 
     #camera {
       width: 100%;
-      border-radius: 18px;
+      border-radius: 20px;
       overflow: hidden;
       background: #222;
-      min-height: 280px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      margin: 15px 0;
     }
 
     #camera canvas {
@@ -66,45 +99,44 @@
       display: block;
     }
 
-    button {
-      width: 100%;
-      border: none;
-      border-radius: 15px;
-      padding: 15px;
-      margin-top: 15px;
-      background: #8b5e34;
-      color: white;
-      font-size: 17px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      background: #aaa;
-    }
-
-    #estado {
-      margin-top: 15px;
-      font-size: 16px;
-      color: #555;
-    }
-
-    #resultado {
-      margin-top: 15px;
+    .resultado {
       padding: 18px;
       border-radius: 18px;
-      background: #f4eadc;
-      color: #5c3b1e;
-      font-size: 19px;
+      margin-top: 15px;
+      font-size: 20px;
       font-weight: bold;
-      display: none;
     }
 
-    #confianza {
-      margin-top: 8px;
+    .correcto {
+      background: #e5f5e5;
+      color: #26733a;
+    }
+
+    .incorrecto {
+      background: #fde5e5;
+      color: #a52a2a;
+    }
+
+    .contador {
+      font-size: 55px;
+      font-weight: bold;
+      color: #8b5e34;
+      margin: 20px;
+    }
+
+    .gracias {
+      font-size: 25px;
+      color: #7b4f28;
+      font-weight: bold;
+    }
+
+    .check {
+      font-size: 80px;
+    }
+
+    .pequeno {
       font-size: 14px;
-      color: #666;
-      font-weight: normal;
+      color: #777;
     }
   </style>
 </head>
@@ -113,59 +145,170 @@
 
 <div class="app">
 
-  <div class="logo">📦</div>
+  <!-- ================= PORTADA ================= -->
 
-  <h1>EcoSort AI</h1>
+  <section id="inicio" class="pantalla activa">
 
-  <div class="subtitulo">
-    Reconocimiento de residuos — CARTÓN
-  </div>
+    <div class="logo">📦</div>
 
-  <div id="camera">
-    <span style="color:white;">La cámara aparecerá aquí</span>
-  </div>
+    <h1>EcoSort AI</h1>
 
-  <button id="iniciar" onclick="iniciarCamara()">
-    📷 Iniciar cámara
-  </button>
+    <h2>Tacho de Cartón</h2>
 
-  <div id="estado">
-    Presiona el botón para comenzar.
-  </div>
+    <p>
+      Identifica tus residuos y descubre
+      dónde debes desecharlos correctamente.
+    </p>
 
-  <div id="resultado"></div>
+    <button onclick="comenzar()">
+      COMENZAR
+    </button>
 
-  <div id="confianza"></div>
+  </section>
+
+
+  <!-- ================= CÁMARA ================= -->
+
+  <section id="reconocimiento" class="pantalla">
+
+    <h2>📷 Reconociendo...</h2>
+
+    <p>
+      Coloca el residuo frente a la cámara.
+    </p>
+
+    <div id="camera">
+      <p style="color:white;padding:40px;">
+        Cargando cámara...
+      </p>
+    </div>
+
+    <div id="resultado" class="resultado">
+      Analizando residuo...
+    </div>
+
+    <p id="confianza" class="pequeno"></p>
+
+    <button id="botonDesechar" onclick="desechar()" disabled>
+      🗑️ DESECHAR
+    </button>
+
+  </section>
+
+
+  <!-- ================= 8 SEGUNDOS ================= -->
+
+  <section id="espera" class="pantalla">
+
+    <h2>🗑️ Deposita el residuo</h2>
+
+    <p>
+      Coloca el residuo dentro del
+      <b>tacho de cartón</b>.
+    </p>
+
+    <div id="contador" class="contador">
+      8
+    </div>
+
+    <p>
+      Tiempo para desechar...
+    </p>
+
+  </section>
+
+
+  <!-- ================= LISTO ================= -->
+
+  <section id="listo" class="pantalla">
+
+    <div class="check">✅</div>
+
+    <h1>¡LISTO!</h1>
+
+    <p>
+      El residuo fue colocado correctamente.
+    </p>
+
+    <button onclick="finalizar()">
+      CONTINUAR
+    </button>
+
+  </section>
+
+
+  <!-- ================= GRACIAS ================= -->
+
+  <section id="gracias" class="pantalla">
+
+    <div class="logo">🌱</div>
+
+    <h1>¡GRACIAS!</h1>
+
+    <p class="gracias">
+      Gracias por ayudar a mantener
+      nuestro planeta más limpio. 💚
+    </p>
+
+    <p>
+      Cada residuo en su lugar
+      hace la diferencia.
+    </p>
+
+  </section>
 
 </div>
+
 
 <script>
 
   // MODELO DE TEACHABLE MACHINE
-  const URL = "https://teachablemachine.withgoogle.com/models/y9AIk9YfX/";
+  const URL =
+    "https://teachablemachine.withgoogle.com/models/y9AIk9YfX/";
 
   let model;
   let webcam;
   let maxPredictions;
 
-  async function iniciarCamara() {
+  let cartónDetectado = false;
+  let analizando = false;
 
-    const boton = document.getElementById("iniciar");
-    const estado = document.getElementById("estado");
 
-    boton.disabled = true;
-    estado.innerText = "⏳ Cargando inteligencia artificial...";
+  // ================= CAMBIAR PANTALLA =================
+
+  function mostrarPantalla(id) {
+
+    document.querySelectorAll(".pantalla").forEach(p => {
+      p.classList.remove("activa");
+    });
+
+    document.getElementById(id).classList.add("activa");
+  }
+
+
+  // ================= COMENZAR =================
+
+  async function comenzar() {
+
+    mostrarPantalla("reconocimiento");
 
     try {
 
       const modelURL = URL + "model.json";
       const metadataURL = URL + "metadata.json";
 
-      model = await tmImage.load(modelURL, metadataURL);
+      model = await tmImage.load(
+        modelURL,
+        metadataURL
+      );
 
       maxPredictions = model.getTotalClasses();
 
-      webcam = new tmImage.Webcam(400, 400, true);
+      webcam = new tmImage.Webcam(
+        400,
+        400,
+        true
+      );
 
       await webcam.setup({
         facingMode: "environment"
@@ -174,25 +317,30 @@
       await webcam.play();
 
       document.getElementById("camera").innerHTML = "";
-      document.getElementById("camera").appendChild(webcam.canvas);
 
-      estado.innerText = "🟢 Cámara activa. Muestra un residuo.";
+      document
+        .getElementById("camera")
+        .appendChild(webcam.canvas);
+
+      analizando = true;
 
       window.requestAnimationFrame(loop);
 
     } catch (error) {
 
-      console.error(error);
+      document.getElementById("resultado").innerHTML =
+        "❌ No se pudo activar la cámara.<br><br>" +
+        "Permite el acceso a la cámara.";
 
-      estado.innerText =
-        "❌ No se pudo activar la cámara. Revisa los permisos del navegador.";
-
-      boton.disabled = false;
     }
   }
 
 
+  // ================= RECONOCIMIENTO =================
+
   async function loop() {
+
+    if (!analizando) return;
 
     webcam.update();
 
@@ -204,77 +352,175 @@
 
   async function predecir() {
 
-    const predicciones = await model.predict(webcam.canvas);
+    if (!model) return;
+
+    const predicciones =
+      await model.predict(webcam.canvas);
 
     let mayor = predicciones[0];
 
-    for (let i = 1; i < predicciones.length; i++) {
+    for (
+      let i = 1;
+      i < predicciones.length;
+      i++
+    ) {
 
-      if (predicciones[i].probability > mayor.probability) {
+      if (
+        predicciones[i].probability >
+        mayor.probability
+      ) {
+
         mayor = predicciones[i];
+
       }
 
     }
 
-    const clase = mayor.className.toLowerCase();
-    const porcentaje = (mayor.probability * 100).toFixed(1);
+    const clase =
+      mayor.className.toLowerCase();
 
-    const resultado = document.getElementById("resultado");
-    const confianza = document.getElementById("confianza");
-
-    confianza.innerText =
-      "Confianza de reconocimiento: " + porcentaje + "%";
+    const porcentaje =
+      (mayor.probability * 100).toFixed(0);
 
 
-    // CARTÓN
+    document.getElementById("confianza").innerText =
+      "Precisión: " + porcentaje + "%";
+
+
+    const resultado =
+      document.getElementById("resultado");
+
+
+    // ========== CARTÓN ==========
+
     if (
       clase.includes("carton") ||
-      clase.includes("cartón") ||
-      clase.includes("papel")
+      clase.includes("cartón")
     ) {
 
-      resultado.style.display = "block";
+      cartónDetectado = true;
+
+      resultado.className =
+        "resultado correcto";
 
       resultado.innerHTML =
         "✅ ¡ES CARTÓN!<br><br>" +
-        "📦 Deposítalo en el<br>" +
-        "🟤 TACHO DE CARTÓN.";
+        "📦 Este residuo va en el " +
+        "<b>TACHO DE CARTÓN</b>.";
+
+      document
+        .getElementById("botonDesechar")
+        .disabled = false;
+
     }
 
 
-    // PLÁSTICO
-    else if (clase.includes("plastico") || clase.includes("plástico")) {
+    // ========== PLÁSTICO ==========
 
-      resultado.style.display = "block";
+    else if (
+      clase.includes("plastico") ||
+      clase.includes("plástico")
+    ) {
+
+      cartónDetectado = false;
+
+      resultado.className =
+        "resultado incorrecto";
 
       resultado.innerHTML =
         "❌ NO VA AQUÍ<br><br>" +
-        "🧴 Este residuo es PLÁSTICO.<br>" +
-        "➡️ Llévalo al TACHO DE PLÁSTICO.";
+        "🧴 Es PLÁSTICO.<br>" +
+        "Llévalo al TACHO DE PLÁSTICO.";
+
+      document
+        .getElementById("botonDesechar")
+        .disabled = true;
+
     }
 
 
-    // ORGÁNICO
-    else if (clase.includes("organico") || clase.includes("orgánico")) {
+    // ========== ORGÁNICO ==========
 
-      resultado.style.display = "block";
+    else if (
+      clase.includes("organico") ||
+      clase.includes("orgánico")
+    ) {
+
+      cartónDetectado = false;
+
+      resultado.className =
+        "resultado incorrecto";
 
       resultado.innerHTML =
         "❌ NO VA AQUÍ<br><br>" +
-        "🍎 Este residuo es ORGÁNICO.<br>" +
-        "➡️ Llévalo al TACHO DE ORGÁNICO.";
+        "🍎 Es ORGÁNICO.<br>" +
+        "Llévalo al TACHO DE ORGÁNICO.";
+
+      document
+        .getElementById("botonDesechar")
+        .disabled = true;
+
     }
 
-
-    // OTRO RESULTADO
     else {
 
-      resultado.style.display = "block";
+      resultado.className =
+        "resultado";
 
       resultado.innerHTML =
-        "🔎 Residuo detectado:<br><br>" +
-        mayor.className;
+        "🔎 Analizando residuo...";
+
+      document
+        .getElementById("botonDesechar")
+        .disabled = true;
     }
+  }
+
+
+  // ================= DESECHAR =================
+
+  function desechar() {
+
+    if (!cartónDetectado) return;
+
+    analizando = false;
+
+    if (webcam) {
+      webcam.stop();
+    }
+
+    mostrarPantalla("espera");
+
+    let tiempo = 8;
+
+    document.getElementById("contador").innerText =
+      tiempo;
+
+    const intervalo = setInterval(() => {
+
+      tiempo--;
+
+      document.getElementById("contador").innerText =
+        tiempo;
+
+      if (tiempo <= 0) {
+
+        clearInterval(intervalo);
+
+        mostrarPantalla("listo");
+
+      }
+
+    }, 1000);
+  }
+
+
+  // ================= FINALIZAR =================
+
+  function finalizar() {
+
+    mostrarPantalla("gracias");
+
   }
 
 </script>
